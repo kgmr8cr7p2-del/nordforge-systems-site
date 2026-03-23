@@ -14,12 +14,12 @@ const translations = {
     "heroText": "Собираем и подготавливаем системы под конкретные задачи клиента: от готовых ПК до комплексных решений с установкой ПО, настройкой окружения и запуском под ключ.",
     "heroPrimary": "Обсудить в Telegram",
     "heroSecondary": "Смотреть на Avito",
-    "metric1Title": "ПК + ПО",
-    "metric1Text": "готово к работе",
+    "metric1Title": "Готовый ПК",
+    "metric1Text": "сборка и ПО",
     "metric2Title": "Под ключ",
-    "metric2Text": "полная подготовка",
+    "metric2Text": "настройка под задачу",
     "metric3Title": "Telegram / Avito",
-    "metric3Text": "связь без форм",
+    "metric3Text": "обсуждение напрямую",
     "heroCardLabel": "Основное направление",
     "heroCardTitle": "Готовое решение для CS2",
     "heroCardText": "Подбираем конфигурацию, собираем ПК, настраиваем программную часть и подготавливаем систему к запуску под задачу клиента.",
@@ -108,12 +108,12 @@ const translations = {
     "heroText": "We assemble and prepare systems for specific client needs: from ready-built PCs to complete solutions with software installation, environment setup, and launch-ready delivery.",
     "heroPrimary": "Discuss in Telegram",
     "heroSecondary": "Open on Avito",
-    "metric1Title": "PC + Software",
-    "metric1Text": "ready to work",
+    "metric1Title": "Ready PC",
+    "metric1Text": "build and software",
     "metric2Title": "Turnkey",
-    "metric2Text": "full preparation",
+    "metric2Text": "setup for your task",
     "metric3Title": "Telegram / Avito",
-    "metric3Text": "contact without forms",
+    "metric3Text": "direct discussion",
     "heroCardLabel": "Main direction",
     "heroCardTitle": "Ready solution for CS2",
     "heroCardText": "We select the configuration, assemble the PC, configure the software side, and prepare the system for launch according to the client’s task.",
@@ -244,6 +244,15 @@ document.querySelectorAll('.nav a').forEach((link) => {
   link.addEventListener('click', () => {
     mainNav.classList.remove('open');
     document.body.classList.remove('nav-open');
+  });
+});
+
+document.querySelectorAll('a[href="#top"]').forEach((link) => {
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+    mainNav.classList.remove('open');
+    document.body.classList.remove('nav-open');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 });
 
