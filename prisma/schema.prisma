@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String               @id @default(cuid())
+  displayName      String?
+  email            String?              @unique
+  emailVerifiedAt  DateTime?
+  telegramId       String?              @unique
+  telegramUsername String?
+  telegramPhotoUrl String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  password         PasswordCredential?
+  sessions         Session[]
+  resetTokens      PasswordResetToken[]
+  portfolio        Portfolio?
+}
+
+model PasswordCredential {
+  userId       String   @id
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  usedAt     DateTime?
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Portfolio {
+  id        String          @id @default(cuid())
+  name      String          @default("Мой портфель")
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  userId    String          @unique
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     PortfolioItem[]
+}
+
+model PortfolioItem {
+  id                String   @id @default(cuid())
+  itemName          String
+  marketHashName    String
+  iconUrl           String?
+  quantity          Int
+  addedPriceCents   Int
+  currentPriceCents Int
+  steamNetCents     Int
+  payoutCents       Int
+  priceUpdatedAt    DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  portfolioId       String
+  portfolio         Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@index([marketHashName])
+  @@index([portfolioId, createdAt])
+}
