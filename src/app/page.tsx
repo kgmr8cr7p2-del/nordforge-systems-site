@@ -11,8 +11,8 @@ export default async function HomePage() {
           <p className="eyebrow">NORDFORGE PORTFOLIO</p>
           <h1>Портфель CS2 с живыми ценами, авторизацией и историей каждой покупки.</h1>
           <p className="hero-text">
-            Пользователь заходит через Telegram или email, создаёт портфель, добавляет
-            предметы из Steam Market и получает автоматический пересчёт цен каждый час.
+            Пользователь входит по email, создаёт портфель, добавляет предметы из
+            Steam Market и получает автоматический пересчёт цен каждый час.
           </p>
           <div className="hero-actions">
             <Link className="primary-btn" href={user ? "/dashboard" : "/register"}>
@@ -28,7 +28,7 @@ export default async function HomePage() {
           <article className="feature-card">
             <h2>Что уже заложено</h2>
             <ul>
-              <li>Авторизация через email и Telegram.</li>
+              <li>Авторизация через email и пароль.</li>
               <li>Восстановление доступа по email.</li>
               <li>Поиск предметов CS2 с подсказками.</li>
               <li>Хранение каждой отдельной покупки.</li>

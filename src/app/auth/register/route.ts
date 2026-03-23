@@ -1,8 +1,7 @@
-import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
-import { applySessionCookie, issueSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirectWithMessage } from "@/lib/routes";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ensureAppUser } from "@/lib/user";
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
@@ -19,35 +18,47 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const existing = await prisma.user.findUnique({
-    where: {
-      email
-    }
-  });
-
-  if (existing) {
-    return redirectWithMessage(request.url, "/register", "error", "Этот email уже занят.");
-  }
-
-  const user = await prisma.user.create({
-    data: {
-      displayName: displayName || null,
-      email,
-      password: {
-        create: {
-          passwordHash: await bcrypt.hash(password, 12)
-        }
-      },
-      portfolio: {
-        create: {
-          name: "Мой портфель"
-        }
+  const supabase = await createSupabaseServerClient();
+  const appUrl = process.env.APP_URL || new URL(request.url).origin;
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${appUrl}/auth/confirm?next=/dashboard`,
+      data: {
+        display_name: displayName || undefined
       }
     }
   });
 
-  const sessionToken = await issueSession(user.id);
-  const response = NextResponse.redirect(new URL("/dashboard", request.url));
-  applySessionCookie(response, sessionToken);
-  return response;
+  if (error) {
+    const message =
+      /already registered/i.test(error.message) ? "Этот email уже занят." : error.message;
+
+    return redirectWithMessage(request.url, "/register", "error", message);
+  }
+
+  if (!data.user) {
+    return redirectWithMessage(
+      request.url,
+      "/register",
+      "error",
+      "Не удалось создать аккаунт. Повторите попытку."
+    );
+  }
+
+  await ensureAppUser(data.user, {
+    displayName: displayName || null
+  });
+
+  if (!data.session) {
+    return redirectWithMessage(
+      request.url,
+      "/login",
+      "success",
+      "Аккаунт создан. Подтвердите email по письму и затем войдите."
+    );
+  }
+
+  return NextResponse.redirect(new URL("/dashboard", request.url));
 }

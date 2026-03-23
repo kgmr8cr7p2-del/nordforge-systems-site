@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
-import { getUserFromRequest } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirectWithMessage } from "@/lib/routes";
 import { fetchSteamPriceByHashName } from "@/lib/steam";
 
 export async function POST(request: NextRequest) {
-  const user = await getUserFromRequest(request);
+  const user = await getCurrentUser();
   if (!user) {
     return redirectWithMessage(request.url, "/login", "error", "Сначала войдите в аккаунт.");
   }

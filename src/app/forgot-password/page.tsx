@@ -24,8 +24,8 @@ export default async function ForgotPasswordPage({
         <p className="eyebrow">Восстановление</p>
         <h1>Сбросить пароль</h1>
         <p className="muted">
-          Мы отправим ссылку для восстановления на email. В dev-режиме без SMTP она
-          просто появится в серверном логе.
+          Мы отправим ссылку для восстановления на email, после чего можно будет
+          задать новый пароль.
         </p>
 
         {params.error ? <div className="page-message error">{params.error}</div> : null}

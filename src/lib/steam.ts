@@ -21,21 +21,33 @@ function getRequestHeaders() {
   };
 }
 
-export async function searchSteamItems(query: string) {
-  const trimmed = query.trim();
-  if (trimmed.length < 2) {
-    return [];
-  }
-
+function buildSteamSearchUrl(query: string) {
   const url = new URL("https://steamcommunity.com/market/search/render/");
   url.searchParams.set("appid", STEAM_APP_ID);
   url.searchParams.set("norender", "1");
-  url.searchParams.set("query", trimmed);
+  url.searchParams.set("query", query);
   url.searchParams.set("count", "10");
   url.searchParams.set("start", "0");
   url.searchParams.set("search_descriptions", "0");
   url.searchParams.set("sort_column", "popular");
   url.searchParams.set("sort_dir", "desc");
+
+  return url;
+}
+
+function buildFallbackQueries(query: string) {
+  const trimmed = query.trim();
+  const normalized = trimmed.replace(/[|()[\]]/g, " ").replace(/\s+/g, " ").trim();
+  const withoutWear = normalized
+    .replace(/\b(Field-Tested|Factory New|Minimal Wear|Well-Worn|Battle-Scarred)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return Array.from(new Set([trimmed, normalized, withoutWear])).filter((candidate) => candidate.length >= 2);
+}
+
+async function requestSteamSearch(query: string) {
+  const url = buildSteamSearchUrl(query);
 
   const response = await fetch(url, {
     headers: getRequestHeaders(),
@@ -47,7 +59,23 @@ export async function searchSteamItems(query: string) {
   }
 
   const payload = await response.json();
-  const results = Array.isArray(payload.results) ? payload.results : [];
+  return Array.isArray(payload.results) ? payload.results : [];
+}
+
+export async function searchSteamItems(query: string) {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) {
+    return [];
+  }
+
+  let results: Array<Record<string, unknown>> = [];
+
+  for (const candidate of buildFallbackQueries(trimmed)) {
+    results = await requestSteamSearch(candidate);
+    if (results.length > 0) {
+      break;
+    }
+  }
 
   return results.map((item: Record<string, unknown>) => {
     const priceText =

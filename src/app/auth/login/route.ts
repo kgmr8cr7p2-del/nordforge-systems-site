@@ -1,8 +1,7 @@
-import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
-import { applySessionCookie, issueSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirectWithMessage } from "@/lib/routes";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ensureAppUser } from "@/lib/user";
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
@@ -13,26 +12,20 @@ export async function POST(request: NextRequest) {
     return redirectWithMessage(request.url, "/login", "error", "Введите email и пароль.");
   }
 
-  const user = await prisma.user.findUnique({
-    where: {
-      email
-    },
-    include: {
-      password: true
-    }
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
   });
 
-  if (!user?.password) {
-    return redirectWithMessage(request.url, "/login", "error", "Аккаунт не найден.");
+  if (error || !data.user) {
+    const message = /invalid login credentials/i.test(error?.message || "")
+      ? "Неверный email или пароль."
+      : error?.message || "Не удалось войти в аккаунт.";
+    return redirectWithMessage(request.url, "/login", "error", message);
   }
 
-  const isValid = await bcrypt.compare(password, user.password.passwordHash);
-  if (!isValid) {
-    return redirectWithMessage(request.url, "/login", "error", "Неверный пароль.");
-  }
+  await ensureAppUser(data.user);
 
-  const sessionToken = await issueSession(user.id);
-  const response = NextResponse.redirect(new URL("/dashboard", request.url));
-  applySessionCookie(response, sessionToken);
-  return response;
+  return NextResponse.redirect(new URL("/dashboard", request.url));
 }
