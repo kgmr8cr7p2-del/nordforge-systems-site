@@ -19,7 +19,7 @@ declare global {
 }
 
 export function TelegramLoginButton() {
-  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
+  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.replace(/^@/, "");
   const widgetRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 

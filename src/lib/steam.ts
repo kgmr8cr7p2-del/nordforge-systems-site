@@ -14,6 +14,15 @@ export type SteamSearchResult = {
   priceText: string;
 };
 
+type PriceHistorySnapshot = {
+  marketHashName: string;
+  itemName: string;
+  iconUrl: string | null;
+  currentPriceCents: number;
+  steamNetCents: number;
+  payoutCents: number;
+};
+
 function getRequestHeaders() {
   return {
     "User-Agent": "Mozilla/5.0 (compatible; NORDFORGE-Portfolio/1.0; +https://github.com/)",
@@ -142,6 +151,43 @@ export async function fetchSteamPriceByHashName(marketHashName: string) {
   };
 }
 
+export async function recordMarketPriceHistory(snapshot: PriceHistorySnapshot) {
+  const { prisma } = await import("@/lib/prisma");
+  const dedupeThreshold = new Date(Date.now() - 45 * 60 * 1000);
+
+  const recent = await prisma.marketPriceHistory.findFirst({
+    where: {
+      marketHashName: snapshot.marketHashName,
+      capturedAt: {
+        gte: dedupeThreshold
+      }
+    },
+    orderBy: {
+      capturedAt: "desc"
+    }
+  });
+
+  if (
+    recent &&
+    recent.currentPriceCents === snapshot.currentPriceCents &&
+    recent.steamNetCents === snapshot.steamNetCents &&
+    recent.payoutCents === snapshot.payoutCents
+  ) {
+    return recent;
+  }
+
+  return prisma.marketPriceHistory.create({
+    data: {
+      marketHashName: snapshot.marketHashName,
+      itemName: snapshot.itemName,
+      iconUrl: snapshot.iconUrl,
+      currentPriceCents: snapshot.currentPriceCents,
+      steamNetCents: snapshot.steamNetCents,
+      payoutCents: snapshot.payoutCents
+    }
+  });
+}
+
 export async function refreshAllPortfolioPrices() {
   const { prisma } = await import("@/lib/prisma");
   const items = await prisma.portfolioItem.findMany({
@@ -167,6 +213,30 @@ export async function refreshAllPortfolioPrices() {
         priceUpdatedAt: new Date()
       }
     });
+
+    const latestItem = await prisma.portfolioItem.findFirst({
+      where: {
+        marketHashName: item.marketHashName
+      },
+      orderBy: {
+        updatedAt: "desc"
+      },
+      select: {
+        itemName: true,
+        iconUrl: true
+      }
+    });
+
+    if (latestItem) {
+      await recordMarketPriceHistory({
+        marketHashName: item.marketHashName,
+        itemName: latestItem.itemName,
+        iconUrl: latestItem.iconUrl,
+        currentPriceCents: pricing.currentPriceCents,
+        steamNetCents: pricing.steamNetCents,
+        payoutCents: pricing.payoutCents
+      });
+    }
 
     updated.push(item.marketHashName);
     await new Promise((resolve) => setTimeout(resolve, 500));

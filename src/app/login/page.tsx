@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { TelegramLoginButton } from "@/components/telegram-login-button";
 import { getCurrentUser } from "@/lib/auth";
 
 type SearchParams = Promise<{
@@ -31,8 +32,8 @@ export default async function LoginPage({
         <p className="eyebrow">Вход</p>
         <h1>Войти в портфель</h1>
         <p className="muted">
-          Войдите по email и паролю. После входа у пользователя появляется личный
-          портфель с отдельной историей покупок и актуальными ценами из Steam.
+          Войдите по email или через Telegram. После входа у пользователя появляется
+          личный портфель с отдельной историей покупок и актуальными ценами из Steam.
         </p>
 
         {params.error ? <div className="page-message error">{params.error}</div> : null}
@@ -62,6 +63,8 @@ export default async function LoginPage({
             Забыл пароль
           </Link>
         </div>
+
+        <TelegramLoginButton />
       </section>
     </main>
   );

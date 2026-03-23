@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirectWithMessage } from "@/lib/routes";
-import { fetchSteamPriceByHashName } from "@/lib/steam";
+import { fetchSteamPriceByHashName, recordMarketPriceHistory } from "@/lib/steam";
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
@@ -59,6 +59,15 @@ export async function POST(request: NextRequest) {
       payoutCents: pricing.payoutCents,
       priceUpdatedAt: new Date()
     }
+  });
+
+  await recordMarketPriceHistory({
+    marketHashName,
+    itemName,
+    iconUrl: iconUrl || null,
+    currentPriceCents: pricing.currentPriceCents,
+    steamNetCents: pricing.steamNetCents,
+    payoutCents: pricing.payoutCents
   });
 
   return redirectWithMessage(request.url, "/dashboard", "success", "Предмет добавлен в портфель.");
